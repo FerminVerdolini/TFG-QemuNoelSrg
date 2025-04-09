@@ -22,7 +22,6 @@
 #include "hw/riscv/riscv_hart.h"
 #include "hw/riscv/sifive_cpu.h"
 #include "hw/gpio/sifive_gpio.h"
-#include "hw/misc/sifive_e_aon.h"
 #include "hw/boards.h"
 
 #define TYPE_RISCV_NOEL_SRG_SOC "riscv.noel.srg.soc"
@@ -36,7 +35,6 @@ typedef struct NOELSRGSoCState {
     /*< public >*/
     RISCVHartArrayState cpus;
     DeviceState *plic;
-    SiFiveEAONState aon;
     SIFIVEGPIOState gpio;
     MemoryRegion xip_mem;
     MemoryRegion mask_rom;
@@ -58,29 +56,16 @@ typedef struct NOELSRGState {
 enum {
     SIFIVE_E_DEV_DEBUG,
     SIFIVE_E_DEV_MROM,
-    SIFIVE_E_DEV_OTP,
     SIFIVE_E_DEV_CLINT,
     SIFIVE_E_DEV_PLIC,
-    SIFIVE_E_DEV_AON,
-    SIFIVE_E_DEV_PRCI,
-    SIFIVE_E_DEV_OTP_CTRL,
     SIFIVE_E_DEV_GPIO0,
     SIFIVE_E_DEV_UART0,
-    SIFIVE_E_DEV_QSPI0,
-    SIFIVE_E_DEV_PWM0,
-    SIFIVE_E_DEV_UART1,
-    SIFIVE_E_DEV_QSPI1,
-    SIFIVE_E_DEV_PWM1,
-    SIFIVE_E_DEV_QSPI2,
-    SIFIVE_E_DEV_PWM2,
     SIFIVE_E_DEV_XIP,
     SIFIVE_E_DEV_DTIM
 };
 
 enum {
-    SIFIVE_E_AON_WDT_IRQ  = 1,
     SIFIVE_E_UART0_IRQ    = 3,
-    SIFIVE_E_UART1_IRQ    = 4,
     SIFIVE_E_GPIO0_IRQ0   = 8
 };
 

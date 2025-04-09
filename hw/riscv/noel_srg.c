@@ -45,7 +45,6 @@
 #include "hw/char/sifive_uart.h"
 #include "hw/intc/riscv_aclint.h"
 #include "hw/intc/sifive_plic.h"
-#include "hw/misc/sifive_e_prci.h"
 #include "hw/misc/sifive_e_aon.h"
 #include "chardev/char.h"
 #include "sysemu/sysemu.h"
@@ -53,21 +52,10 @@
 static const MemMapEntry noel_srg_memmap[] = {
     [SIFIVE_E_DEV_DEBUG] =    {        0x0,     0x1000 },
     [SIFIVE_E_DEV_MROM] =     {     0x1000,     0x2000 },
-    [SIFIVE_E_DEV_OTP] =      {    0x20000,     0x2000 },
     [SIFIVE_E_DEV_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_E_DEV_PLIC] =     {  0xc000000,  0x4000000 },
-    [SIFIVE_E_DEV_AON] =      { 0x10000000,     0x8000 },
-    [SIFIVE_E_DEV_PRCI] =     { 0x10008000,     0x8000 },
-    [SIFIVE_E_DEV_OTP_CTRL] = { 0x10010000,     0x1000 },
     [SIFIVE_E_DEV_GPIO0] =    { 0x10012000,     0x1000 },
     [SIFIVE_E_DEV_UART0] =    { 0x10013000,     0x1000 },
-    [SIFIVE_E_DEV_QSPI0] =    { 0x10014000,     0x1000 },
-    [SIFIVE_E_DEV_PWM0] =     { 0x10015000,     0x1000 },
-    [SIFIVE_E_DEV_UART1] =    { 0x10023000,     0x1000 },
-    [SIFIVE_E_DEV_QSPI1] =    { 0x10024000,     0x1000 },
-    [SIFIVE_E_DEV_PWM1] =     { 0x10025000,     0x1000 },
-    [SIFIVE_E_DEV_QSPI2] =    { 0x10034000,     0x1000 },
-    [SIFIVE_E_DEV_PWM2] =     { 0x10035000,     0x1000 },
     [SIFIVE_E_DEV_XIP] =      { 0x20000000, 0x20000000 },
     [SIFIVE_E_DEV_DTIM] =     { 0x80000000,     0x4000 }
 };
@@ -161,7 +149,7 @@ static void noel_srg_machine_class_init(ObjectClass *oc, void *data)
                                           "the revB HiFive1 board");
 }
 static const TypeInfo noel_srg_machine_typeinfo = {
-//    .name       = MACHINE_TYPE_NAME("noel-srg"),
+   .name       = MACHINE_TYPE_NAME("noel-srg"),
     .name       = TYPE_RISCV_NOEL_SRG_MACHINE,
     .parent     = TYPE_MACHINE,
     .class_init = noel_srg_machine_class_init,
@@ -187,8 +175,7 @@ static void noel_srg_soc_init(Object *obj)
     object_property_set_int(OBJECT(&s->cpus), "resetvec", 0x1004, &error_abort);
     object_initialize_child(obj, "riscv.noel.srg.gpio0", &s->gpio,
                             TYPE_SIFIVE_GPIO);
-    object_initialize_child(obj, "riscv.noel.srg.aon", &s->aon,
-                            TYPE_SIFIVE_E_AON);
+    
 }
 
 static void noel_srg_soc_realize(DeviceState *dev, Error **errp)
@@ -227,17 +214,8 @@ static void noel_srg_soc_realize(DeviceState *dev, Error **errp)
         RISCV_ACLINT_DEFAULT_MTIMER_SIZE, 0, ms->smp.cpus,
         RISCV_ACLINT_DEFAULT_MTIMECMP, RISCV_ACLINT_DEFAULT_MTIME,
         SIFIVE_E_LFCLK_DEFAULT_FREQ, false);
-    sifive_e_prci_create(memmap[SIFIVE_E_DEV_PRCI].base);
 
-    /* AON */
-
-    if (!sysbus_realize(SYS_BUS_DEVICE(&s->aon), errp)) {
-        return;
-    }
-
-    /* Map AON registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->aon), 0, memmap[SIFIVE_E_DEV_AON].base);
-
+   
     /* GPIO */
 
     if (!sysbus_realize(SYS_BUS_DEVICE(&s->gpio), errp)) {
@@ -256,28 +234,11 @@ static void noel_srg_soc_realize(DeviceState *dev, Error **errp)
                            qdev_get_gpio_in(DEVICE(s->plic),
                                             SIFIVE_E_GPIO0_IRQ0 + i));
     }
-    sysbus_connect_irq(SYS_BUS_DEVICE(&s->aon), 0,
-                       qdev_get_gpio_in(DEVICE(s->plic),
-                                        SIFIVE_E_AON_WDT_IRQ));
+
 
     sifive_uart_create(sys_mem, memmap[SIFIVE_E_DEV_UART0].base,
         serial_hd(0), qdev_get_gpio_in(DEVICE(s->plic), SIFIVE_E_UART0_IRQ));
-/*        
-    create_unimplemented_device("riscv.noel.srg.qspi0",
-        memmap[SIFIVE_E_DEV_QSPI0].base, memmap[SIFIVE_E_DEV_QSPI0].size);
-    create_unimplemented_device("riscv.noel.srg.pwm0",
-        memmap[SIFIVE_E_DEV_PWM0].base, memmap[SIFIVE_E_DEV_PWM0].size);
-    sifive_uart_create(sys_mem, memmap[SIFIVE_E_DEV_UART1].base,
-        serial_hd(1), qdev_get_gpio_in(DEVICE(s->plic), SIFIVE_E_UART1_IRQ));
-    create_unimplemented_device("riscv.noel.srg.qspi1",
-        memmap[SIFIVE_E_DEV_QSPI1].base, memmap[SIFIVE_E_DEV_QSPI1].size);
-    create_unimplemented_device("riscv.noel.srg.pwm1",
-        memmap[SIFIVE_E_DEV_PWM1].base, memmap[SIFIVE_E_DEV_PWM1].size);
-    create_unimplemented_device("riscv.noel.srg.qspi2",
-        memmap[SIFIVE_E_DEV_QSPI2].base, memmap[SIFIVE_E_DEV_QSPI2].size);
-    create_unimplemented_device("riscv.noel.srg.pwm2",
-        memmap[SIFIVE_E_DEV_PWM2].base, memmap[SIFIVE_E_DEV_PWM2].size);
-*/
+
     /* Flash memory */
     memory_region_init_rom(&s->xip_mem, OBJECT(dev), "riscv.noel.srg.xip",
                            memmap[SIFIVE_E_DEV_XIP].size, &error_fatal);
