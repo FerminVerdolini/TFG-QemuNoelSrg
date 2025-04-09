@@ -87,3 +87,14 @@ config SPIKE
     select HTIF
     select RISCV_ACLINT
     select SIFIVE_PLIC
+    
+config NOEL_SRG
+    bool
+    select RISCV_ACLINT
+    select SIFIVE_GPIO
+    select SIFIVE_PLIC
+    select SIFIVE_UART
+    select SIFIVE_E_PRCI
+    select SIFIVE_E_AON
+    select UNIMP
+    
