@@ -28,37 +28,42 @@ jobs:
         id: cache-ncc
         uses: actions/cache@v4
         with:
-          path: ${{ env.HOME }}/gaisler/ncc
+          path: ${{ env.HOME }}/gaisler
           key: ${{ runner.os }}-gaisler-ncc-1.0.4
+
+      - name: Ensure $HOME/gaisler exists
+        run: mkdir -p $HOME/gaisler
 
       - name: Download and extract Gaisler NCC if not cached
         if: steps.cache-ncc.outputs.cache-hit != 'true'
         run: |
-          mkdir -p $HOME/gaisler
           wget http://download.gaisler.com/products/ncc/bin/ncc-1.0.4-gcc-linux64.tar.xz -O ncc.tar.xz
           tar -xf ncc.tar.xz -C $HOME/gaisler
-          mv $HOME/gaisler/ncc-* $HOME/gaisler/ncc
 
       - name: Add Gaisler NCC to PATH
-        run: echo "$HOME/gaisler/ncc/bin" >> $GITHUB_PATH
+        run: echo "$HOME/gaisler/ncc-1.0.4-gcc/bin" >> $GITHUB_PATH
 
       - name: Verify toolchain installation
         run: |
-          ls -la $HOME/gaisler/ncc/bin
+          ls -la $HOME/gaisler/ncc-1.0.4-gcc/bin
           which riscv-gaisler-elf-as
 
       - name: Cache QEMU build directory
-        id: cache-qemu-build
+        id: cache-qemu
         uses: actions/cache@v4
         with:
           path: build
-          key: ${{ runner.os }}-qemu-build-${{ hashFiles('**/configure', '**/Makefile') }}
+          key: ${{ runner.os }}-qemu-build-${{ hashFiles('configure', 'Makefile', 'hw/**', 'include/**') }}
 
-      - name: Build QEMU (riscv32-softmmu only)
+      - name: Build QEMU (only if needed)
         run: |
           mkdir -p build
           cd build
-          ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
+          if [ ! -f config-host.mak ]; then
+            echo "🛠️ Configuring QEMU..."
+            ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
+          fi
+          echo "⚙️ Compilando QEMU (solo si es necesario)..."
           make -j$(nproc)
 
       - name: Build firmware tests
@@ -71,15 +76,12 @@ jobs:
           cd firmware-tests/
           chmod +x runQEMU
           echo "🧪 Running UART loopback test..."
-          timeout 15s ./runQEMU uartTest | tee uart.log || true
+          ./runQEMU uartTest | tee uart.log
 
       - name: Check loopback test result
         run: |
           cd firmware-tests/
-          if grep -q "UART loopback test PASSED" uart.log; then
-            echo "✅ Test PASSED"
-          else
-            echo "❌ UART loopback test failed or timed out"
+          if ! grep -q "UART loopback test PASSED" uart.log; then
+            echo "❌ UART loopback test failed: expected output not found"
             exit 1
           fi
-
