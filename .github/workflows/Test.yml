@@ -69,10 +69,10 @@ jobs:
 
       - name: Run QEMU uartTest
         run: |
-          cd firmware-tests
+          cd firmware-tests/
           chmod +x runQEMU
           echo "🧪 Running UART loopback test..."
-          ./firmware-tests/runQEMU uartTest | tee uart.log
+          ./runQEMU uartTest | tee uart.log
           cat uart.log
 
       - name: Check loopback test result
