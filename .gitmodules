@@ -43,3 +43,6 @@
 [submodule "tests/lcitool/libvirt-ci"]
 	path = tests/lcitool/libvirt-ci
 	url = https://gitlab.com/libvirt/libvirt-ci.git
+[submodule "firmware-tests"]
+	path = firmware-tests
+	url = git@github.com:FerminVerdolini/TFG-FirmaweTests.git
