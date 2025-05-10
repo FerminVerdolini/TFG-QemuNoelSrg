@@ -11,54 +11,76 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-      with:
+      # 1. Checkout del repositorio sin cargar submódulos automáticamente
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
           submodules: false
 
-    - name: Init test submodule
-      run: git submodule update --init firmware-tests
+      # 2. Inicializar el submódulo específico
+      - name: Init test submodule
+        run: git submodule update --init firmware-tests
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libglib2.0-dev libpixman-1-dev wget
+      # 3. Instalar dependencias (incluye unzip, porque lo usaremos para extraer el toolchain)
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libglib2.0-dev libpixman-1-dev wget unzip
 
-    # Cache Gaisler NCC toolchain
-    - name: Cache Gaisler NCC Toolchain
-      id: cache-ncc
-      uses: actions/cache@v4
-      with:
-        path: /opt/gaisler
-        key: gaisler-ncc-1.0.4
+      # 4. Cache del toolchain de Gaisler NCC en $HOME/gaisler (Estrategia 2)
+      - name: Cache Gaisler NCC Toolchain
+        id: cache-ncc
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.HOME }}/gaisler
+          key: ${{ runner.os }}-gaisler-ncc-1.0.4
 
-    - name: Download and extract Gaisler NCC
-      if: steps.cache-ncc.outputs.cache-hit != 'true'
-      run: |
-        wget http://download.gaisler.com/products/ncc/bin/ncc-1.0.4-gcc-mingw64.zip -O gaisler.zip
-        sudo unzip -q gaisler.zip -d /opt/gaisler
+      # 5. Asegurarse de que exista el directorio del toolchain
+      - name: Ensure $HOME/gaisler exists
+        run: mkdir -p $HOME/gaisler
 
-    - name: Add Gaisler NCC to PATH
-      run: echo "/opt/gaisler/ncc-1.0.4-gcc-mingw64/bin" >> $GITHUB_PATH
+      # 6. Descargar y extraer el toolchain si no se recuperó de la cache
+      - name: Download and extract Gaisler NCC if not cached
+        if: steps.cache-ncc.outputs.cache-hit != 'true'
+        run: |
+          wget http://download.gaisler.com/products/ncc/bin/ncc-1.0.4-gcc-mingw64.zip -O gaisler.zip
+          unzip -q gaisler.zip -d $HOME/gaisler
 
-    # Compilar QEMU
-    - name: Build QEMU (riscv32-softmmu only)
-      run: |
-        mkdir -p build
-        cd build
-        ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
-        make -j$(nproc)
+      # 7. Agregar el directorio del toolchain al PATH para que se encuentre el compilador
+      - name: Add Gaisler NCC to PATH
+        run: echo "$HOME/gaisler/ncc-1.0.4-gcc-mingw64/bin" >> $GITHUB_PATH
 
-    # Compilar firmware test
-    - name: Build firmware tests
-      run: |
-        cd firmware-tests
-        make
+      # 7.1 Paso opcional de verificación (lista los ejecutables y comprueba el as)
+      - name: Verify toolchain installation
+        run: |
+          ls -la $HOME/gaisler/ncc-1.0.4-gcc-mingw64/bin
+          which riscv-gaisler-elf-as
 
-    # Ejecutar test con QEMU
-    - name: Run QEMU tests
-      run: |
-        cd firmware-test
-        chmod +x ./runQEMU
-        ./runQEMU
- 
+      # 8. Cache del directorio de compilación de QEMU para compilación incremental
+      - name: Cache QEMU build directory
+        id: cache-qemu-build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-qemu-build-${{ hashFiles('**/configure', '**/Makefile') }}
+
+      # 9. Compilar QEMU (se recomponen solo los cambios si la cache está restaurada)
+      - name: Build QEMU (riscv32-softmmu only)
+        run: |
+          mkdir -p build
+          cd build
+          ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
+          make -j$(nproc)
+
+      # 10. Compilar firmware tests (la PATH ya se actualizó)
+      - name: Build firmware tests
+        run: |
+          cd firmware-tests
+          make
+
+      # 11. Ejecutar tests con QEMU
+      - name: Run QEMU tests
+        run: |
+          cd firmware-tests
+          chmod +x ./runQEMU
+          ./runQEMU
