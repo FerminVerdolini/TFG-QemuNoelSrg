@@ -206,10 +206,21 @@ static void grlib_apbuart_write(void *opaque, hwaddr addr,
     switch (addr) {
     case DATA_OFFSET:
     case DATA_OFFSET + 3:       /* When only one byte write */
+        c = value & 0xFF;
+
+        /* Modo loopback: reenviar el dato como si hubiera llegado por RX */
+        if (uart->control & UART_LOOPBACK) {
+            uart_add_to_fifo(uart, &c, 1);
+            uart->status |= UART_DATA_READY;
+
+            if (uart->control & UART_RECEIVE_INTERRUPT) {
+                qemu_irq_pulse(uart->irq);
+            }
+        }
+
         /* Transmit when character device available and transmitter enabled */
         if (qemu_chr_fe_backend_connected(&uart->chr) &&
             (uart->control & UART_TRANSMIT_ENABLE)) {
-            c = value & 0xFF;
             /* XXX this blocks entire thread. Rewrite to use
              * qemu_chr_fe_write and background I/O callbacks */
             qemu_chr_fe_write_all(&uart->chr, &c, 1);

@@ -200,7 +200,7 @@ static void noel_srg_soc_realize(DeviceState *dev, Error **errp)
                                  SIFIVE_E_PLIC_CONTEXT_BASE,
                                  SIFIVE_E_PLIC_CONTEXT_STRIDE,
                                  memmap[NOEL_SRG_DEV_PLIC].size);
-    // VER QUE ES ESTO
+
     riscv_aclint_swi_create(memmap[NOEL_SRG_DEV_CLINT].base,
                             0, ms->smp.cpus, false);
     riscv_aclint_mtimer_create(memmap[NOEL_SRG_DEV_CLINT].base +
