@@ -20,8 +20,8 @@
 #define HW_NOEL_SRG_H
 
 #include "hw/riscv/riscv_hart.h"
-#include "hw/riscv/sifive_cpu.h"
-#include "hw/gpio/sifive_gpio.h"
+#include "hw/riscv/sifive_cpu.h" // TODO cambiaer el cpu
+#include "hw/gpio/gr_gpio.h"
 #include "hw/boards.h"
 
 #define TYPE_RISCV_NOEL_SRG_SOC "riscv.noel.srg.soc"
@@ -35,7 +35,7 @@ typedef struct NOELSRGSoCState {
     /*< public >*/
     RISCVHartArrayState cpus;
     DeviceState *plic;
-    SIFIVEGPIOState gpio;
+    GRGPIOState gpio;
     MemoryRegion xip_mem;
     MemoryRegion mask_rom;
 } NOELSRGSoCState;
@@ -54,17 +54,15 @@ typedef struct NOELSRGState {
     OBJECT_CHECK(NOELSRGState, (obj), TYPE_RISCV_NOEL_SRG_MACHINE)
 
 enum {
-    SIFIVE_E_DEV_DEBUG,
-    SIFIVE_E_DEV_MROM,
-    SIFIVE_E_DEV_CLINT,
-    SIFIVE_E_DEV_PLIC,
-    SIFIVE_E_DEV_GPIO0,
-    SIFIVE_E_DEV_UART0,
-    SIFIVE_E_DEV_XIP,
-    SIFIVE_E_DEV_DTIM
+    NOEL_SRG_DEV_CLINT,
+    NOEL_SRG_DEV_PLIC,
+    NOEL_SRG_DEV_GPIO0,
+    NOEL_SRG_DEV_UART0,
+    NOEL_SRG_DEV_DTIM
 };
 
 enum {
+    SIFIVE_E_AON_WDT_IRQ  = 1,
     SIFIVE_E_UART0_IRQ    = 3,
     SIFIVE_E_GPIO0_IRQ0   = 8
 };
@@ -83,5 +81,25 @@ enum {
 #define SIFIVE_E_PLIC_ENABLE_STRIDE 0x80
 #define SIFIVE_E_PLIC_CONTEXT_BASE 0x200000
 #define SIFIVE_E_PLIC_CONTEXT_STRIDE 0x1000
+
+
+//----GRLIB
+
+/* GPTimer */
+#define TYPE_GRLIB_GPTIMER "grlib-gptimer"
+
+/* APB UART */
+#define TYPE_GRLIB_APB_UART "grlib-apbuart"
+
+// GRLIB UART
+#define GR_UART_OFFSET  (0xFC001000)
+#define GR_UART_IRQ     (1)
+
+// GRLIB TIMER
+#define GR_TIMER_OFFSET (0xFC000000) //0xFC000000 - 0xFC0000FF
+#define GR_TIMER_IRQ    (2)
+#define GR_TIMER_COUNT  (2)
+
+#define CPU_CLK         10000000 
 
 #endif
