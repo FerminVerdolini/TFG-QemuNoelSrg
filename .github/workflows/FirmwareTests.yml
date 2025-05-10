@@ -1,48 +1,54 @@
-name: QEMU Firmware Test
+name: Run firmware tests in QEMU
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "**" ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libglib2.0-dev libpixman-1-dev wget
+    # Cache Gaisler NCC toolchain
+    - name: Cache Gaisler NCC Toolchain
+      id: cache-ncc
+      uses: actions/cache@v4
+      with:
+        path: /opt/gaisler
+        key: gaisler-ncc-1.0.4
 
-    - name: Download and install riscv32 toolchain
+    - name: Download and extract Gaisler NCC
+      if: steps.cache-ncc.outputs.cache-hit != 'true'
       run: |
-        wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2024.01.21/riscv32-elf-ubuntu-22.04-nightly-2024.01.21.tar.gz
-        tar -xzf riscv32-elf-ubuntu-22.04-nightly-2024.01.21.tar.gz
-        echo "$PWD/riscv32-elf/bin" >> $GITHUB_PATH
+        wget http://download.gaisler.com/products/ncc/bin/ncc-1.0.4-gcc-mingw64.zip -O gaisler.zip
+        sudo unzip -q gaisler.zip -d /opt/gaisler
 
-    - name: Configure QEMU
+    - name: Add Gaisler NCC to PATH
+      run: echo "/opt/gaisler/ncc-1.0.4-gcc-mingw64/bin" >> $GITHUB_PATH
+
+    # Compilar QEMU
+    - name: Build QEMU (riscv32-softmmu only)
       run: |
-        mkdir build
+        mkdir -p build
         cd build
         ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
-
-    - name: Build QEMU
-      run: |
-        cd build
         make -j$(nproc)
 
-    - name: Build firmware test
+    # Compilar firmware test
+    - name: Build firmware tests
       run: |
         cd firmware-test
         make
 
-    - name: Run QEMU firmware test
+    # Ejecutar test con QEMU
+    - name: Run QEMU tests
       run: |
         cd firmware-test
-        chmod +x runQEMU
+        chmod +x ./runQEMU
         ./runQEMU
+ 
