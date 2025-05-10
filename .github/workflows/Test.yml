@@ -73,10 +73,11 @@ jobs:
           chmod +x runQEMU
           echo "🧪 Running UART loopback test..."
           timeout 30s ./runQEMU uartTest | tee uart.log || true
-          cat uart.log
 
       - name: Check loopback test result
         run: |
+          cd firmware-tests/
           if ! grep -q "UART loopback test PASSED" uart.log; then
             echo "❌ UART loopback test failed: expected output not found"
+            exit 1
           fi
