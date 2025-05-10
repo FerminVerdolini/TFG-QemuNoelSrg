@@ -17,7 +17,7 @@ jobs:
           submodules: false
 
     - name: Init test submodule
-      run: git submodule update --init firmware-test
+      run: git submodule update --init firmware-tests
 
     - name: Install dependencies
       run: |
@@ -52,7 +52,7 @@ jobs:
     # Compilar firmware test
     - name: Build firmware tests
       run: |
-        cd firmware-test
+        cd firmware-tests
         make
 
     # Ejecutar test con QEMU
