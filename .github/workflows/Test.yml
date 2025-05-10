@@ -72,7 +72,7 @@ jobs:
           cd firmware-tests/
           chmod +x runQEMU
           echo "🧪 Running UART loopback test..."
-          timeout 30s ./runQEMU uartTest | tee uart.log || true
+          ./runQEMU uartTest | tee uart.log
 
       - name: Check loopback test result
         run: |
