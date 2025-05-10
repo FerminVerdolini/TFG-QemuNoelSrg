@@ -11,23 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout del repositorio sin cargar submódulos automáticamente
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: false
 
-      # 2. Inicializar el submódulo específico (firmware-tests)
       - name: Init test submodule
         run: git submodule update --init firmware-tests
 
-      # 3. Instalar dependencias necesarias (incluye tar, xz-utils y unzip)
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential libglib2.0-dev libpixman-1-dev wget tar xz-utils unzip
 
-      # 4. Cache del toolchain de Gaisler NCC en $HOME/gaisler
       - name: Cache Gaisler NCC Toolchain
         id: cache-ncc
         uses: actions/cache@v4
@@ -35,29 +31,23 @@ jobs:
           path: ${{ env.HOME }}/gaisler
           key: ${{ runner.os }}-gaisler-ncc-1.0.4
 
-      # 5. Asegurarse de que exista el directorio $HOME/gaisler
       - name: Ensure $HOME/gaisler exists
         run: mkdir -p $HOME/gaisler
 
-      # 6. Descargar y extraer el toolchain si no está cacheado
-      #    Se descarga el archivo ncc-1.0.4-gcc-linux64.tar.xz y al extraerlo se genera la carpeta "ncc-1.0.4-gcc"
       - name: Download and extract Gaisler NCC if not cached
         if: steps.cache-ncc.outputs.cache-hit != 'true'
         run: |
           wget http://download.gaisler.com/products/ncc/bin/ncc-1.0.4-gcc-linux64.tar.xz -O ncc.tar.xz
           tar -xf ncc.tar.xz -C $HOME/gaisler
 
-      # 7. Agregar el directorio del toolchain al PATH para que se encuentre el compilador
       - name: Add Gaisler NCC to PATH
         run: echo "$HOME/gaisler/ncc-1.0.4-gcc/bin" >> $GITHUB_PATH
 
-      # 7.1 Verificar que el toolchain esté instalado correctamente
       - name: Verify toolchain installation
         run: |
           ls -la $HOME/gaisler/ncc-1.0.4-gcc/bin
           which riscv-gaisler-elf-as
 
-      # 8. Cache del directorio de compilación de QEMU para compilación incremental
       - name: Cache QEMU build directory
         id: cache-qemu-build
         uses: actions/cache@v4
@@ -65,7 +55,6 @@ jobs:
           path: build
           key: ${{ runner.os }}-qemu-build-${{ hashFiles('**/configure', '**/Makefile') }}
 
-      # 9. Compilar QEMU (se recompilan solo los cambios si la cache se restaura)
       - name: Build QEMU (riscv32-softmmu only)
         run: |
           mkdir -p build
@@ -73,7 +62,6 @@ jobs:
           ../configure --target-list=riscv32-softmmu --enable-debug --disable-user --disable-tools --disable-docs
           make -j$(nproc)
 
-      # 10. Compilar firmware tests (usando el compilador del toolchain que ya está en el PATH)
       - name: Build firmware tests
         run: |
           cd firmware-tests
