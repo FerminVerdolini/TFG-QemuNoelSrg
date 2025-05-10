@@ -2,9 +2,9 @@ name: Run firmware tests in QEMU
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]
 
 jobs:
   test:
