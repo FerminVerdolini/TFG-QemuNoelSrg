@@ -17,7 +17,7 @@ jobs:
           submodules: false
 
     - name: Init test submodule
-      run: git submodule update --init firmware-tests
+      run: git submodule update --init firmware-test
 
     - name: Install dependencies
       run: |
