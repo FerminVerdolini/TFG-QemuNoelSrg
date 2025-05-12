@@ -18,7 +18,7 @@ static void gr_gpio_IN_set(void *opaque, int line, int value)
 {
     GRGPIOState *s = GR_GPIO(opaque);
 
-    printf("GPIO in %d set to %d\n", line, value );  
+    // printf("GPIO in %d set to %d\n", line, value );  
     
     if ( !( s->dir & (1 << line) ) ) // Si el pin es de entrada
     {
@@ -38,7 +38,7 @@ static void gr_gpio_OUT_set(void *opaque, int line, int value)
 {
     GRGPIOState *s = GR_GPIO(opaque);
 
-    printf("GPIO out %d set to %d\n", line, value );
+    // printf("GPIO out %d set to %d\n", line, value );
 
     qemu_set_irq( s->gpio_out[line], value );
 }
@@ -47,7 +47,7 @@ static void gr_gpio_DIR_set(void *opaque, int line, int value)
 {
     GRGPIOState *s = GR_GPIO(opaque);
 
-    printf("GPIO dir %d set to %d\n", line, value );
+    // printf("GPIO dir %d set to %d\n", line, value );
 
     qemu_set_irq( s->gpio_dir[line], value );
 }
@@ -84,7 +84,7 @@ static uint64_t gr_gpio_read(void *opaque, hwaddr offset, unsigned int size)
                       __func__, offset);
     }
 
-    printf("GPIO read: %" PRIx64 "\n", r);
+    // printf("GPIO read: %" PRIx64 "\n", r);
 
     return r;
 }
@@ -98,7 +98,7 @@ static void gr_gpio_write(void *opaque, hwaddr offset,
 
 //    trace_gr_gpio_write(offset, value);
 
-printf("GPIO write: %" PRIx64 "\n", value);
+// printf("GPIO write: %" PRIx64 "\n", value);
 
     switch (offset) {
 

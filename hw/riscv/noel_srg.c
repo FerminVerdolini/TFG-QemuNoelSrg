@@ -63,7 +63,7 @@ static qemu_irq pin_in_irq[GR_GPIO_PINS];
 // Handler para gestionar la interrupción generada por los cambios en GPIO
 static void gpio_irq_handler(void *opaque, int line, int value)
 {
-   printf("SOC GPIO%d set to %d\n", line, value );
+//    printf("SOC GPIO%d set to %d\n", line, value );
    
    if ( line == 22 )
    {
@@ -173,8 +173,8 @@ static void noel_srg_soc_init(Object *obj)
     object_property_set_int(OBJECT(&s->cpus), "resetvec", 0x00000000, &error_abort);
     object_initialize_child(obj, "riscv.noel.srg.gpio0", &s->gpio, TYPE_GR_GPIO);
 
-    printf("DEFAULT RSTVECT: %08lX\n", s->cpus.resetvec);
-    printf("DEFAULT NUM-HARTS: %08X\n", ms->smp.cpus);
+    // printf("DEFAULT RSTVECT: %08lX\n", s->cpus.resetvec);
+    // printf("DEFAULT NUM-HARTS: %08X\n", ms->smp.cpus);
 }
 
 static void noel_srg_soc_realize(DeviceState *dev, Error **errp)

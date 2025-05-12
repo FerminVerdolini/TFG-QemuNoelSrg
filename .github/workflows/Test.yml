@@ -79,6 +79,24 @@ jobs:
           if grep -q "UART loopback test PASSED" uart.log; then
             echo "✅ Test PASSED"
           else
-            echo "❌ UART loopback test failed or timed out"
+            echo "❌ UART loopback test failed"
             exit 1
           fi
+      
+      - name: Run QEMU gpioTest
+        run: |
+          cd firmware-tests/
+          chmod +x runQEMU
+          echo "🧪 Running GPIO test..."
+          timeout 15s ./runQEMU gpioTest | tee gpio.log || true
+
+      - name: Check GPIO test result
+        run: |
+          cd firmware-tests/
+          if grep -q "GPIO test PASSED" gpio.log; then
+            echo "✅ GPIO test PASSED"
+          else
+            echo "❌ GPIO test failed"
+            exit 1
+          fi
+
