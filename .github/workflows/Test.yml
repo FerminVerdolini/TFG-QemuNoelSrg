@@ -116,3 +116,20 @@ jobs:
             echo "❌ Timer test failed"
             exit 1
           fi
+
+      - name: Run QEMU uartIrqTest
+        run: |
+          cd firmware-tests/
+          chmod +x runQEMU
+          echo "🧪 Running UART IRQ loopback test..."
+          timeout 15s ./runQEMU uartIrqTest | tee uart_irq.log || true
+
+      - name: Check UART IRQ loopback test result
+        run: |
+          cd firmware-tests/
+          if grep -q "UART irq loopback test PASSED" uart_irq.log; then
+            echo "✅ UART IRQ loopback test PASSED"
+          else
+            echo "❌ UART IRQ loopback test failed"
+            exit 1
+          fi
