@@ -36,6 +36,5 @@
 /* IRQMP */
 #define TYPE_GRLIB_IRQMP "grlib-irqmp"
 
-void grlib_irqmp_ack(DeviceState *dev, unsigned int cpu, int intno);
-
+void grlib_irqmp_ack(DeviceState *dev, int intno);
 #endif /* GRLIB_IRQMP_H */

@@ -107,6 +107,11 @@ static char uart_pop(UART *uart)
 
     if (uart->len == 0) {
         uart->status &= ~UART_DATA_READY;
+
+        if (uart->control & UART_RECEIVE_INTERRUPT) {
+            qemu_irq_lower(uart->irq);
+        }
+
         return 0;
     }
 
@@ -120,6 +125,10 @@ static char uart_pop(UART *uart)
 
     if (!uart_data_to_read(uart)) {
         uart->status &= ~UART_DATA_READY;
+
+        if (uart->control & UART_RECEIVE_INTERRUPT) {
+            qemu_irq_lower(uart->irq);
+        }
     }
 
     return ret;
@@ -153,7 +162,8 @@ static void grlib_apbuart_receive(void *opaque, const uint8_t *buf, int size)
         uart->status |= UART_DATA_READY;
 
         if (uart->control & UART_RECEIVE_INTERRUPT) {
-            qemu_irq_pulse(uart->irq);
+            //qemu_irq_pulse(uart->irq);
+            qemu_irq_raise(uart->irq);
         }
     }
 }
@@ -214,13 +224,15 @@ static void grlib_apbuart_write(void *opaque, hwaddr addr,
             uart->status |= UART_DATA_READY;
 
             if (uart->control & UART_RECEIVE_INTERRUPT) {
-                qemu_irq_pulse(uart->irq);
+		//qemu_irq_pulse(uart->irq);
+        	qemu_irq_raise(uart->irq);
             }
         }
 
         /* Transmit when character device available and transmitter enabled */
         if (qemu_chr_fe_backend_connected(&uart->chr) &&
             (uart->control & UART_TRANSMIT_ENABLE)) {
+            c = value & 0xFF;
             /* XXX this blocks entire thread. Rewrite to use
              * qemu_chr_fe_write and background I/O callbacks */
             qemu_chr_fe_write_all(&uart->chr, &c, 1);

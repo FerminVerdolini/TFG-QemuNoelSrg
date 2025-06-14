@@ -170,7 +170,8 @@ static void grlib_gptimer_hit(void *opaque)
     if (timer->config & GPTIMER_INT_ENABLE) {
         /* Set the pending bit (only unset by write in the config register) */
         timer->config |= GPTIMER_INT_PENDING;
-        qemu_irq_pulse(timer->irq);
+        //qemu_irq_pulse(timer->irq);
+        qemu_irq_raise(timer->irq);
     }
 
     if (timer->config & GPTIMER_RESTART) {
@@ -296,6 +297,7 @@ static void grlib_gptimer_write(void *opaque, hwaddr addr,
             if (value & GPTIMER_INT_PENDING) {
                 /* clear pending bit */
                 value &= ~GPTIMER_INT_PENDING;
+                qemu_irq_lower(unit->timers[id].irq);
             } else {
                 /* keep pending bit */
                 value |= unit->timers[id].config & GPTIMER_INT_PENDING;

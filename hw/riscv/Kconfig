@@ -93,9 +93,7 @@ config NOEL_SRG
     select RISCV_ACLINT
     select GR_GPIO
     select GRLIB
-    select SIFIVE_GPIO
     select SIFIVE_PLIC
     select SIFIVE_E_PRCI
-    select SIFIVE_E_AON
     select UNIMP
     

@@ -237,17 +237,20 @@ target_ulong riscv_load_kernel(MachineState *machine,
                          NULL, &kernel_load_base, NULL, NULL, 0,
                          EM_RISCV, 1, 0, NULL, true, sym_cb) > 0) {
         kernel_entry = kernel_load_base;
+        printf("load_elf_ram_sym\n");
         goto out;
     }
 
     if (load_uimage_as(kernel_filename, &kernel_entry, NULL, NULL,
                        NULL, NULL, NULL) > 0) {
+        printf("load_uimage_as\n");
         goto out;
     }
 
     if (load_image_targphys_as(kernel_filename, kernel_start_addr,
                                current_machine->ram_size, NULL) > 0) {
         kernel_entry = kernel_start_addr;
+        printf("load_image_targphys_as\n");
         goto out;
     }
 

@@ -100,3 +100,19 @@ jobs:
             exit 1
           fi
 
+      - name: Run QEMU timerTest
+        run: |
+          cd firmware-tests/
+          chmod +x runQEMU
+          echo "🧪 Running Timer test..."
+          timeout 15s ./runQEMU timerTest | tee timer.log || true
+
+      - name: Check Timer test result
+        run: |
+          cd firmware-tests/
+          if grep -q "Timer test PASSED" timer.log; then
+            echo "✅ Timer test PASSED"
+          else
+            echo "❌ Timer test failed"
+            exit 1
+          fi
